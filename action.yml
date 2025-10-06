@@ -100,8 +100,8 @@ runs:
           exit 1
         fi
         
-        echo "=== Container Contents Debug ==="
-        docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
+        #echo "=== Container Contents Debug ==="
+        #docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
         
         echo "=== Running Analysis with PR #$FINAL_PR_NUMBER ==="
         docker run --rm \
@@ -128,8 +128,8 @@ runs:
             echo '=== Starting Script ==='
             git config --global --add safe.directory /workspace
             cd /workspace
-            python3 /app/testScript.py 38
-
+            python3 /app/testScript.py $PR_NUMBER
           "
+
 
 

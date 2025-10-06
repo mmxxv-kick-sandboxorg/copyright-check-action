@@ -1,0 +1,1 @@
+# copyright-check-action

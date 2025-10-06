@@ -197,9 +197,23 @@ def main():
     parser = argparse.ArgumentParser(description='Copyright Infringement Detection')
     parser.add_argument('pr_number', type=int, help='Pull request number')
     
-    args = parser.parse_args()
+    # Debug: Print command line arguments
+    print(f"Command line arguments: {sys.argv}")
+    
+    try:
+        args = parser.parse_args()
+        print(f"Parsed PR number: {args.pr_number}")
+    except SystemExit as e:
+        print(f"Failed to parse arguments. Arguments received: {sys.argv}")
+        print(f"Expected usage: python3 gitDiffCheck.py <pr_number>")
+        raise
     
     print(f"Analyzing PR #{args.pr_number} in repository {github_repository}")
+    print(f"Environment variables:")
+    print(f"  GITHUB_REPOSITORY: {github_repository}")
+    print(f"  GITHUB_TOKEN: {'***' if github_token else 'Not set'}")
+    print(f"  AACS: {'***' if url else 'Not set'}")
+    print(f"  AACSAPIkey: {'***' if AACSAPIkey else 'Not set'}")
     
     # Get git diff
     diff_content = get_git_diff(args.pr_number)

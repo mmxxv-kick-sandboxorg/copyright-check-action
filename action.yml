@@ -112,24 +112,10 @@ runs:
           -e GITHUB_REPOSITORY="${{ github.repository }}" \
           -e GITHUB_HEAD_REF="${{ github.head_ref }}" \
           -e GITHUB_BASE_REF="${{ github.base_ref }}" \
-          -e PR_NUMBER="$FINAL_PR_NUMBER" \
-          -v ${{ github.workspace }}:/workspace \
+          -v ${{ github.workspace }}:/app \
           -w /app \
           ${{ steps.meta.outputs.tags }} \
-          bash -c "
-            echo '=== Container Debug Info ==='
-            echo 'Working directory: ' \$(pwd)
-            echo 'Available files in /app:'
-            ls -la /app/
-            echo 'PR Number from environment: ' \$PR_NUMBER
-            echo 'GitHub Repository: ' \$GITHUB_REPOSITORY
-            echo 'Environment variables containing PR or GITHUB:'
-            env | grep -iE '(pr|github)' | sort
-            echo '=== Starting Script ==='
-            git config --global --add safe.directory /workspace
-            cd /workspace
-            python3 /app/testScript.py \$PR_NUMBER
-          "
+          bash -c "git config --global --add safe.directory /app && python3 gitDiffCheck.py ${{ inputs.pr-number }}"
 
 
 

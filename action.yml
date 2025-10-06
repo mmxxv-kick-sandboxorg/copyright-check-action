@@ -78,6 +78,11 @@ runs:
         fi
         
         echo "Running copyright infringement detection for PR #$PR_NUM"
+        echo "Using container image: ${{ steps.meta.outputs.tags }}"
+        echo "Container registry: ${{ inputs.container-registry }}"
+        
+        # Debug: Check if container image exists and contents
+        docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
         
         docker run --rm \
           -e GITHUB_TOKEN="${{ inputs.github-token }}" \
@@ -88,9 +93,10 @@ runs:
           -e GITHUB_HEAD_REF="${{ github.head_ref }}" \
           -e GITHUB_BASE_REF="${{ github.base_ref }}" \
           -v ${{ github.workspace }}:/workspace \
-          -w /workspace \
+          -w /app \
           ${{ steps.meta.outputs.tags }} \
           bash -c "
             git config --global --add safe.directory /workspace
+            cd /workspace
             python3 /app/gitDiffCheck.py $PR_NUM
           "

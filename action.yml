@@ -68,18 +68,18 @@ runs:
         cache-from: type=registry,ref=${{ inputs.container-registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:buildcache
         cache-to: type=registry,ref=${{ inputs.container-registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:buildcache,mode=max
 
-    - name: Run Copyright Infringement Analysis
-      id: analysis
+    - name: Determine PR Number
+      id: pr-number
       shell: bash
       run: |
-        # Get PR number from input or event
-        PR_NUM="${{ inputs.pr-number }}"
-        if [[ -z "$PR_NUM" || "$PR_NUM" == "" ]]; then
-          PR_NUM="${{ github.event.pull_request.number }}"
-        fi
-        
-        # Validate PR number exists
-        if [[ -z "$PR_NUM" || "$PR_NUM" == "" ]]; then
+        # Determine PR number from various sources
+        if [[ -n "${{ inputs.pr-number }}" && "${{ inputs.pr-number }}" != "" ]]; then
+          PR_NUMBER="${{ inputs.pr-number }}"
+          echo "Using PR number from input: $PR_NUMBER"
+        elif [[ -n "${{ github.event.pull_request.number }}" ]]; then
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          echo "Using PR number from event: $PR_NUMBER"
+        else
           echo "ERROR: Could not determine PR number"
           echo "Input pr-number: '${{ inputs.pr-number }}'"
           echo "Event PR number: '${{ github.event.pull_request.number }}'"
@@ -87,16 +87,24 @@ runs:
           exit 1
         fi
         
-        echo "Running copyright infringement detection for PR #$PR_NUM"
+        echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
+        echo "Final determined PR number: $PR_NUMBER"
+
+    - name: Debug Container Contents
+      shell: bash
+      run: |
+        echo "=== Container Contents Debug ==="
+        docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
+
+    - name: Run Copyright Infringement Analysis
+      id: analysis
+      shell: bash
+      run: |
+        echo "Running copyright infringement detection for PR #${{ steps.pr-number.outputs.pr-number }}"
         echo "Using container image: ${{ steps.meta.outputs.tags }}"
         echo "Container registry: ${{ inputs.container-registry }}"
         echo "GitHub event: ${{ github.event_name }}"
         
-        # Debug: Check if container image exists and contents
-        echo "=== Container Contents Debug ==="
-        docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
-        
-        echo "=== Starting Analysis ==="
         docker run --rm \
           -e GITHUB_TOKEN="${{ inputs.github-token }}" \
           -e AACS="${{ inputs.aacs-url }}" \
@@ -105,7 +113,7 @@ runs:
           -e GITHUB_REPOSITORY="${{ github.repository }}" \
           -e GITHUB_HEAD_REF="${{ github.head_ref }}" \
           -e GITHUB_BASE_REF="${{ github.base_ref }}" \
-          -e PR_NUMBER="$PR_NUM" \
+          -e PR_NUMBER="${{ steps.pr-number.outputs.pr-number }}" \
           -v ${{ github.workspace }}:/workspace \
           -w /app \
           ${{ steps.meta.outputs.tags }} \
@@ -118,5 +126,5 @@ runs:
             echo 'All environment variables:' && env | grep -E '(PR_NUMBER|GITHUB_|AACS)' | sort
             git config --global --add safe.directory /workspace
             cd /workspace
-            python3 /app/gitDiffCheck.py
+            python3 /app/testScript.py
           "

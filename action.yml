@@ -87,18 +87,18 @@ runs:
         echo "Repository: ${{ github.repository }}"
         
         # Determine PR number with fallback
-        if [[ -n "$INPUT_PR_NUMBER" && "$INPUT_PR_NUMBER" != "null" && "$INPUT_PR_NUMBER" != "" ]]; then
-          FINAL_PR_NUMBER="$INPUT_PR_NUMBER"
-          echo "✅ Using PR number from input: $FINAL_PR_NUMBER"
-        elif [[ -n "$EVENT_PR_NUMBER" && "$EVENT_PR_NUMBER" != "null" && "$EVENT_PR_NUMBER" != "" ]]; then
-          FINAL_PR_NUMBER="$EVENT_PR_NUMBER"
-          echo "✅ Using PR number from event: $FINAL_PR_NUMBER"
-        else
-          echo "❌ ERROR: No PR number available from any source"
-          echo "Available environment variables:"
-          env | grep -E "(INPUT_|EVENT_|GITHUB_)" | sort
-          exit 1
-        fi
+        #if [[ -n "$INPUT_PR_NUMBER" && "$INPUT_PR_NUMBER" != "null" && "$INPUT_PR_NUMBER" != "" ]]; then
+        #  FINAL_PR_NUMBER="$INPUT_PR_NUMBER"
+        #  echo "✅ Using PR number from input: $FINAL_PR_NUMBER"
+        #elif [[ -n "$EVENT_PR_NUMBER" && "$EVENT_PR_NUMBER" != "null" && "$EVENT_PR_NUMBER" != "" ]]; then
+        #  FINAL_PR_NUMBER="$EVENT_PR_NUMBER"
+        #  echo "✅ Using PR number from event: $FINAL_PR_NUMBER"
+        #else
+        #  echo "❌ ERROR: No PR number available from any source"
+        #  echo "Available environment variables:"
+        #  env | grep -E "(INPUT_|EVENT_|GITHUB_)" | sort
+        #  exit 1
+        #fi
         
         #echo "=== Container Contents Debug ==="
         #docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
@@ -130,6 +130,7 @@ runs:
             cd /workspace
             python3 /app/testScript.py \$PR_NUMBER
           "
+
 
 
 

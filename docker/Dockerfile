@@ -20,7 +20,7 @@ WORKDIR /app
 
 # Copy the analysis scripts (assuming build context is action root)
 COPY gitDiffCheck.py /app/gitDiffCheck.py
-COPY testScript.py /app/testScript.py
+#COPY testScript.py /app/testScript.py
 
 # Make scripts executable
 RUN chmod +x /app/gitDiffCheck.py /app/testScript.py

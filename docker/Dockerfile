@@ -1,18 +1,27 @@
-# Dockerfile
+# Dockerfile for Copyright Infringement Detection
 FROM ubuntu:22.04
 
-# required package install
+# Install required packages
 RUN apt-get update && apt-get install -y \
     python3 python3-pip git curl gh && \
     rm -rf /var/lib/apt/lists/*
 
-# Hugging Face Transformers and dependency package install
-RUN pip3 install --no-cache-dir transformers torch accelerate
+# Install Python dependencies
+RUN pip3 install --no-cache-dir \
+    transformers \
+    torch \
+    accelerate \
+    requests \
+    numpy \
+    GitPython
 
-# work directory
+# Set work directory
 WORKDIR /app
 
-# copy check script to container
+# Copy the analysis script (assuming build context is action root)
 COPY gitDiffCheck.py /app/gitDiffCheck.py
+
+# Make script executable
+RUN chmod +x /app/gitDiffCheck.py
 
 CMD ["python3", "gitDiffCheck.py"]

@@ -128,8 +128,9 @@ runs:
             echo '=== Starting Script ==='
             git config --global --add safe.directory /workspace
             cd /workspace
-            python3 /app/testScript.py $PR_NUMBER
+            python3 /app/testScript.py \$PR_NUMBER
           "
+
 
 
 

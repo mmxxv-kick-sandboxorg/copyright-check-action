@@ -194,36 +194,15 @@ def analyze_copyright_infringement(diff_content, pr_number):
 
 def main():
     """Main function."""
-    # Try to get PR number from environment variable first
-    pr_number = os.getenv('PR_NUMBER')
-    
-    if pr_number:
-        try:
-            pr_number = int(pr_number)
-            print(f"PR number from environment variable: {pr_number}")
-        except ValueError:
-            print(f"Invalid PR number in environment: {pr_number}")
-            pr_number = None
-    
-    # Fallback to command line argument if environment variable not available
-    if pr_number is None:
-        parser = argparse.ArgumentParser(description='Copyright Infringement Detection')
-        parser.add_argument('pr_number', type=int, nargs='?', help='Pull request number')
-        
-        # Debug: Print command line arguments
-        print(f"Command line arguments: {sys.argv}")
-        
-        try:
-            args = parser.parse_args()
-            if args.pr_number:
-                pr_number = args.pr_number
-                print(f"PR number from command line: {pr_number}")
-        except SystemExit as e:
-            print(f"Failed to parse arguments. Arguments received: {sys.argv}")
-    
-    # Final validation
-    if pr_number is None:
-        print("ERROR: No PR number provided via environment variable (PR_NUMBER) or command line argument")
+    # argument
+    parser = argparse.ArgumentParser(description='publish GitHub Pull-request diff command, and Query to a REST API.')
+    parser.add_argument('pullId', type=str, help='Number of Pull-request ID')
+    args = parser.parse_args()
+
+    pullId = args.pullId
+
+    if pullId is None:
+        print("ERROR: No PR number provided command line argument")
         print("Available environment variables:")
         for key, value in os.environ.items():
             if any(keyword in key for keyword in ['PR', 'GITHUB', 'AACS']):
@@ -259,4 +238,5 @@ def main():
     print(f"Analysis completed for PR #{pr_number}")
 
 if __name__ == "__main__":
+
     main()

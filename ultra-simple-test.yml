@@ -1,0 +1,35 @@
+name: 'Ultra Simple PR Test'
+description: 'Ultra simple test - just pass PR number directly'
+
+inputs:
+  pr-number:
+    description: 'Pull request number'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Ultra Simple Test
+      shell: bash
+      run: |
+        echo "=== Ultra Simple PR Number Test ==="
+        echo "Direct input: ${{ inputs.pr-number }}"
+        echo "Event PR: ${{ github.event.pull_request.number }}"
+        
+        # Test with Ubuntu container and direct variable passing
+        docker run --rm \
+          -e TEST_VAR="Hello World" \
+          -e PR_NUM="${{ inputs.pr-number }}" \
+          ubuntu:22.04 \
+          bash -c '
+            echo "=== Inside Docker Container ==="
+            echo "TEST_VAR: $TEST_VAR"
+            echo "PR_NUM: $PR_NUM"
+            if [[ -n "$PR_NUM" && "$PR_NUM" != "null" ]]; then
+              echo "SUCCESS: PR number received in container: $PR_NUM"
+            else
+              echo "FAILED: PR number not received in container"
+              echo "Available env vars:"
+              env | sort
+            fi
+          '

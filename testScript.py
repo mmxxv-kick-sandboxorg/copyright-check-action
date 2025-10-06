@@ -9,19 +9,52 @@ import json
 def main():
     print("=== Simplified Copyright Check Test ===")
     
-    # Get PR number from environment
-    pr_number = os.getenv('PR_NUMBER')
-    if not pr_number:
-        print("ERROR: PR_NUMBER environment variable not set")
-        sys.exit(1)
+    # Debug all environment variables
+    print("\n=== ALL Environment Variables ===")
+    for key, value in sorted(os.environ.items()):
+        if any(keyword in key.upper() for keyword in ['PR', 'GITHUB', 'AACS', 'TOKEN']):
+            if any(secret in key.upper() for secret in ['TOKEN', 'KEY', 'SECRET']):
+                print(f"{key}: ***")
+            else:
+                print(f"{key}: {value}")
     
-    try:
-        pr_number = int(pr_number)
-    except ValueError:
-        print(f"ERROR: Invalid PR_NUMBER value: {pr_number}")
-        sys.exit(1)
+    print(f"\n=== Searching for PR Number ===")
+    # Try multiple possible environment variable names
+    pr_sources = [
+        ('PR_NUMBER', os.getenv('PR_NUMBER')),
+        ('GITHUB_PR_NUMBER', os.getenv('GITHUB_PR_NUMBER')),
+        ('INPUT_PR_NUMBER', os.getenv('INPUT_PR_NUMBER')),
+        ('EVENT_PR_NUMBER', os.getenv('EVENT_PR_NUMBER'))
+    ]
     
-    print(f"Processing PR #{pr_number}")
+    pr_number = None
+    for source_name, source_value in pr_sources:
+        print(f"Checking {source_name}: {source_value}")
+        if source_value and source_value.strip() and source_value != 'null':
+            try:
+                pr_number = int(source_value)
+                print(f"✅ Found valid PR number from {source_name}: {pr_number}")
+                break
+            except ValueError:
+                print(f"❌ Invalid PR number format in {source_name}: {source_value}")
+    
+    if pr_number is None:
+        print("\n❌ ERROR: No valid PR number found in any environment variable")
+        print("Command line arguments:", sys.argv)
+        
+        # Try to get from command line as fallback
+        if len(sys.argv) > 1:
+            try:
+                pr_number = int(sys.argv[1])
+                print(f"✅ Using PR number from command line: {pr_number}")
+            except ValueError:
+                print(f"❌ Invalid command line PR number: {sys.argv[1]}")
+        
+        if pr_number is None:
+            print("❌ No PR number available from any source")
+            return 1
+    
+    print(f"\n✅ Processing PR #{pr_number}")
     
     # Print all relevant environment variables
     print("\n=== Environment Variables ===")

@@ -68,62 +68,64 @@ runs:
         cache-from: type=registry,ref=${{ inputs.container-registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:buildcache
         cache-to: type=registry,ref=${{ inputs.container-registry }}/${{ github.repository_owner }}/${{ inputs.image-name }}:buildcache,mode=max
 
-    - name: Determine PR Number
-      id: pr-number
-      shell: bash
-      run: |
-        # Determine PR number from various sources
-        if [[ -n "${{ inputs.pr-number }}" && "${{ inputs.pr-number }}" != "" ]]; then
-          PR_NUMBER="${{ inputs.pr-number }}"
-          echo "Using PR number from input: $PR_NUMBER"
-        elif [[ -n "${{ github.event.pull_request.number }}" ]]; then
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          echo "Using PR number from event: $PR_NUMBER"
-        else
-          echo "ERROR: Could not determine PR number"
-          echo "Input pr-number: '${{ inputs.pr-number }}'"
-          echo "Event PR number: '${{ github.event.pull_request.number }}'"
-          echo "Event name: '${{ github.event_name }}'"
-          exit 1
-        fi
-        
-        echo "pr-number=$PR_NUMBER" >> $GITHUB_OUTPUT
-        echo "Final determined PR number: $PR_NUMBER"
-
-    - name: Debug Container Contents
-      shell: bash
-      run: |
-        echo "=== Container Contents Debug ==="
-        docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
-
     - name: Run Copyright Infringement Analysis
       id: analysis
       shell: bash
+      env:
+        # Set environment variables at step level to ensure they're available
+        INPUT_PR_NUMBER: ${{ inputs.pr-number }}
+        EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+        GITHUB_TOKEN_VAR: ${{ inputs.github-token }}
+        AACS_VAR: ${{ inputs.aacs-url }}
+        AACS_KEY_VAR: ${{ inputs.aacs-api-key }}
+        HF_TOKEN_VAR: ${{ inputs.huggingface-token }}
       run: |
-        echo "Running copyright infringement detection for PR #${{ steps.pr-number.outputs.pr-number }}"
-        echo "Using container image: ${{ steps.meta.outputs.tags }}"
-        echo "Container registry: ${{ inputs.container-registry }}"
+        echo "=== Debug GitHub Variables ==="
+        echo "Input PR number: '$INPUT_PR_NUMBER'"
+        echo "Event PR number: '$EVENT_PR_NUMBER'"
         echo "GitHub event: ${{ github.event_name }}"
+        echo "Repository: ${{ github.repository }}"
         
+        # Determine PR number with fallback
+        if [[ -n "$INPUT_PR_NUMBER" && "$INPUT_PR_NUMBER" != "null" && "$INPUT_PR_NUMBER" != "" ]]; then
+          FINAL_PR_NUMBER="$INPUT_PR_NUMBER"
+          echo "✅ Using PR number from input: $FINAL_PR_NUMBER"
+        elif [[ -n "$EVENT_PR_NUMBER" && "$EVENT_PR_NUMBER" != "null" && "$EVENT_PR_NUMBER" != "" ]]; then
+          FINAL_PR_NUMBER="$EVENT_PR_NUMBER"
+          echo "✅ Using PR number from event: $FINAL_PR_NUMBER"
+        else
+          echo "❌ ERROR: No PR number available from any source"
+          echo "Available environment variables:"
+          env | grep -E "(INPUT_|EVENT_|GITHUB_)" | sort
+          exit 1
+        fi
+        
+        echo "=== Container Contents Debug ==="
+        docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
+        
+        echo "=== Running Analysis with PR #$FINAL_PR_NUMBER ==="
         docker run --rm \
-          -e GITHUB_TOKEN="${{ inputs.github-token }}" \
-          -e AACS="${{ inputs.aacs-url }}" \
-          -e AACSAPIkey="${{ inputs.aacs-api-key }}" \
-          -e HUGGINGFACE_TOKEN="${{ inputs.huggingface-token }}" \
+          -e GITHUB_TOKEN="$GITHUB_TOKEN_VAR" \
+          -e AACS="$AACS_VAR" \
+          -e AACSAPIkey="$AACS_KEY_VAR" \
+          -e HUGGINGFACE_TOKEN="$HF_TOKEN_VAR" \
           -e GITHUB_REPOSITORY="${{ github.repository }}" \
           -e GITHUB_HEAD_REF="${{ github.head_ref }}" \
           -e GITHUB_BASE_REF="${{ github.base_ref }}" \
-          -e PR_NUMBER="${{ steps.pr-number.outputs.pr-number }}" \
+          -e PR_NUMBER="$FINAL_PR_NUMBER" \
           -v ${{ github.workspace }}:/workspace \
           -w /app \
           ${{ steps.meta.outputs.tags }} \
           bash -c "
-            echo 'Container environment:'
-            echo 'Working directory:' \$(pwd)
-            echo 'Available files in /app:' && ls -la /app/
-            echo 'Available files in /workspace:' && ls -la /workspace/ | head -10
-            echo 'PR Number from environment:' \$PR_NUMBER
-            echo 'All environment variables:' && env | grep -E '(PR_NUMBER|GITHUB_|AACS)' | sort
+            echo '=== Container Debug Info ==='
+            echo 'Working directory: ' \$(pwd)
+            echo 'Available files in /app:'
+            ls -la /app/
+            echo 'PR Number from environment: ' \$PR_NUMBER
+            echo 'GitHub Repository: ' \$GITHUB_REPOSITORY
+            echo 'Environment variables containing PR or GITHUB:'
+            env | grep -iE '(pr|github)' | sort
+            echo '=== Starting Script ==='
             git config --global --add safe.directory /workspace
             cd /workspace
             python3 /app/testScript.py

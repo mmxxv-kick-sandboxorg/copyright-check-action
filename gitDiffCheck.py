@@ -194,21 +194,43 @@ def analyze_copyright_infringement(diff_content, pr_number):
 
 def main():
     """Main function."""
-    parser = argparse.ArgumentParser(description='Copyright Infringement Detection')
-    parser.add_argument('pr_number', type=int, help='Pull request number')
+    # Try to get PR number from environment variable first
+    pr_number = os.getenv('PR_NUMBER')
     
-    # Debug: Print command line arguments
-    print(f"Command line arguments: {sys.argv}")
+    if pr_number:
+        try:
+            pr_number = int(pr_number)
+            print(f"PR number from environment variable: {pr_number}")
+        except ValueError:
+            print(f"Invalid PR number in environment: {pr_number}")
+            pr_number = None
     
-    try:
-        args = parser.parse_args()
-        print(f"Parsed PR number: {args.pr_number}")
-    except SystemExit as e:
-        print(f"Failed to parse arguments. Arguments received: {sys.argv}")
-        print(f"Expected usage: python3 gitDiffCheck.py <pr_number>")
-        raise
+    # Fallback to command line argument if environment variable not available
+    if pr_number is None:
+        parser = argparse.ArgumentParser(description='Copyright Infringement Detection')
+        parser.add_argument('pr_number', type=int, nargs='?', help='Pull request number')
+        
+        # Debug: Print command line arguments
+        print(f"Command line arguments: {sys.argv}")
+        
+        try:
+            args = parser.parse_args()
+            if args.pr_number:
+                pr_number = args.pr_number
+                print(f"PR number from command line: {pr_number}")
+        except SystemExit as e:
+            print(f"Failed to parse arguments. Arguments received: {sys.argv}")
     
-    print(f"Analyzing PR #{args.pr_number} in repository {github_repository}")
+    # Final validation
+    if pr_number is None:
+        print("ERROR: No PR number provided via environment variable (PR_NUMBER) or command line argument")
+        print("Available environment variables:")
+        for key, value in os.environ.items():
+            if any(keyword in key for keyword in ['PR', 'GITHUB', 'AACS']):
+                print(f"  {key}: {'***' if 'TOKEN' in key or 'KEY' in key else value}")
+        sys.exit(1)
+    
+    print(f"Analyzing PR #{pr_number} in repository {github_repository}")
     print(f"Environment variables:")
     print(f"  GITHUB_REPOSITORY: {github_repository}")
     print(f"  GITHUB_TOKEN: {'***' if github_token else 'Not set'}")
@@ -216,14 +238,14 @@ def main():
     print(f"  AACSAPIkey: {'***' if AACSAPIkey else 'Not set'}")
     
     # Get git diff
-    diff_content = get_git_diff(args.pr_number)
+    diff_content = get_git_diff(pr_number)
     
     if not diff_content:
         print("No diff content found")
         return
     
     # Analyze for copyright infringement
-    result = analyze_copyright_infringement(diff_content, args.pr_number)
+    result = analyze_copyright_infringement(diff_content, pr_number)
     
     # Output results
     print(json.dumps(result, indent=2))
@@ -233,6 +255,8 @@ def main():
         with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
             f.write(f"result={json.dumps(result)}\n")
             f.write(f"violations-found={str(result.get('violations_found', False)).lower()}\n")
+    
+    print(f"Analysis completed for PR #{pr_number}")
 
 if __name__ == "__main__":
     main()

@@ -18,10 +18,11 @@ RUN pip3 install --no-cache-dir \
 # Set work directory
 WORKDIR /app
 
-# Copy the analysis script (assuming build context is action root)
+# Copy the analysis scripts (assuming build context is action root)
 COPY gitDiffCheck.py /app/gitDiffCheck.py
+COPY testScript.py /app/testScript.py
 
-# Make script executable
-RUN chmod +x /app/gitDiffCheck.py
+# Make scripts executable
+RUN chmod +x /app/gitDiffCheck.py /app/testScript.py
 
 CMD ["python3", "gitDiffCheck.py"]

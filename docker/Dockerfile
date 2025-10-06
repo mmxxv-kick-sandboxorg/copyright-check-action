@@ -23,6 +23,8 @@ COPY gitDiffCheck.py /app/gitDiffCheck.py
 #COPY testScript.py /app/testScript.py
 
 # Make scripts executable
-RUN chmod +x /app/gitDiffCheck.py /app/testScript.py
+# RUN chmod +x /app/gitDiffCheck.py /app/testScript.py
+RUN chmod +x /app/gitDiffCheck.py
 
 CMD ["python3", "gitDiffCheck.py"]
+

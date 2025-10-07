@@ -103,7 +103,7 @@ runs:
         #echo "=== Container Contents Debug ==="
         #docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
         
-        echo "=== App Running Analysis with PR #$INPUT_PR_NUMBER ==="
+        echo "=== App Running Analysis with PR #$INPUT_PR_NUMBER === 43 44 45"
         docker run --rm \
           -e GITHUB_TOKEN="$GITHUB_TOKEN_VAR" \
           -e AACS="$AACS_VAR" \
@@ -117,6 +117,7 @@ runs:
           -w /app \
           ${{ steps.meta.outputs.tags }} \
           bash -c "git config --global --add safe.directory /app && python3 gitDiffCheck.py 43 44 45"
+
 
 
 

@@ -116,7 +116,8 @@ runs:
           -v ${{ github.action_path }}/gitDiffCheck.py:/app/gitDiffCheck.py \
           -w /app \
           ${{ steps.meta.outputs.tags }} \
-          bash -c "git config --global --add safe.directory /app && python3 gitDiffCheck.py ${{ inputs.pr-number }}"
+          bash -c "git config --global --add safe.directory /app && python3 gitDiffCheck.py 43"
+
 
 
 

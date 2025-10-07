@@ -103,7 +103,7 @@ runs:
         #echo "=== Container Contents Debug ==="
         #docker run --rm ${{ steps.meta.outputs.tags }} ls -la /app/ || echo "Container or files not found"
         
-        echo "=== Running Analysis with PR #$FINAL_PR_NUMBER ==="
+        echo "=== Running Analysis with PR #$INPUT_PR_NUMBER ==="
         docker run --rm \
           -e GITHUB_TOKEN="$GITHUB_TOKEN_VAR" \
           -e AACS="$AACS_VAR" \
@@ -116,7 +116,8 @@ runs:
           -v ${{ github.action_path }}/gitDiffCheck.py:/app/gitDiffCheck.py \
           -w /workspace \
           ${{ steps.meta.outputs.tags }} \
-          bash -c "git config --global --add safe.directory /workspace && python3 /app/gitDiffCheck.py ${{ inputs.pr-number }}"
+          bash -c "git config --global --add safe.directory /workspace && python3 gitDiffCheck.py ${{ inputs.pr-number }}"
+
 
 
 

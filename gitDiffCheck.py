@@ -239,4 +239,4 @@ def main():
 
 if __name__ == "__main__":
 
-    main()
+    main(sys.argv[1:])  # command line params exclude command name
